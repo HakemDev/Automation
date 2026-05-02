@@ -1,0 +1,132 @@
+Git branch workflow for this repo
+
+Current idea:
+- `main` = stable version of the project
+- `qemu-uc-sanity` = all work related to UC sanity
+
+1. Start UC work
+
+Move to your UC branch:
+```bash
+git switch qemu-uc-sanity
+```
+
+2. Edit or create files
+
+While you are on `qemu-uc-sanity`, create or edit files normally.
+Examples:
+- update `Automated tests with qemu/Uc sanity tests.bash`
+- create a new UC script
+- change folders or test logic related to UC
+
+Git will attach those changes to the current branch.
+
+3. Save your work
+
+After editing:
+```bash
+git add .
+git commit -m "Describe the UC change"
+```
+
+Example:
+```bash
+git add .
+git commit -m "Improve UC sanity automation flow"
+```
+
+4. Send the branch to GitHub
+
+The first time:
+```bash
+git push -u origin qemu-uc-sanity
+```
+
+After that, usually:
+```bash
+git push
+```
+
+This means your UC branch exists:
+- locally on your machine
+- remotely on GitHub
+
+5. Continue later
+
+Next time you come back to UC work:
+```bash
+git switch qemu-uc-sanity
+git pull
+```
+
+Then edit again, and save again:
+```bash
+git add .
+git commit -m "Next UC update"
+git push
+```
+
+6. Keep `main` stable
+
+If you switch to `main`:
+```bash
+git switch main
+```
+
+You will see the version of files that belongs to `main`.
+
+Important:
+- files created only in `qemu-uc-sanity` may not appear in `main`
+- edits done only in `qemu-uc-sanity` will not be in `main` until you merge
+
+7. Move UC work into `main`
+
+When your UC work is ready:
+```bash
+git switch main
+git pull
+git merge qemu-uc-sanity
+git push
+```
+
+After that, `main` will contain the committed work from `qemu-uc-sanity`.
+
+8. Safe rule before switching branches
+
+Before changing branches, do one of these:
+- commit your work
+- or stash it
+
+Best simple habit:
+```bash
+git add .
+git commit -m "Save work before switching branch"
+```
+
+9. Daily workflow for your repo
+
+For UC work:
+```bash
+git switch qemu-uc-sanity
+git pull
+# edit files
+git add .
+git commit -m "Update UC sanity scripts"
+git push
+```
+
+When ready to bring that work into main:
+```bash
+git switch main
+git pull
+git merge qemu-uc-sanity
+git push
+```
+
+10. Simple meaning
+
+- `git switch qemu-uc-sanity` = work on UC branch
+- `git add .` = prepare changed files
+- `git commit -m "..."` = save snapshot
+- `git push` = send branch updates to GitHub
+- `git merge qemu-uc-sanity` = bring UC work into `main`

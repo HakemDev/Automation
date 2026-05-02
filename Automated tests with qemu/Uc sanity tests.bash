@@ -37,7 +37,7 @@ echo "Running full test suite for guest: $GUEST_NAME"
 
 #Create my guest
 Guest_creation(){
-guest="vm2"
+guest="$GUEST_NAME"
 qemu-system-uc -machine virt,accel=kvm -name guest=${guest},debug-threads=on -cpu host -m 64G,slots=8,maxmem=128G -smp cpus=8,maxcpus=32 \
 -enable-kvm \
 -drive file=/usr/share/AAVMF/AAVMF_CODE_2M.pure-efi.fd,if=pflash,format=raw,unit=0,readonly=on \
@@ -122,35 +122,35 @@ echo "Host information saved to: $HOST_INFO_LOG"
 {
     echo "[$(date '+%F %T')] ========= Starting test sequence for $GUEST_NAME ========="
     echo "\nStatus of VM..."
-    printf 'info status\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    printf 'info status\n' | socat - UNIX-CONNECT:"$SOCK"
     sleep 10
 
     echo -e "\n\nStop VM..."
-    echo -e  "stop" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    echo -e  "stop" | socat - UNIX-CONNECT:"$SOCK"
     sleep 5
 
     echo -e "\n\nStatus of VM..."
-    printf 'info status\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    printf 'info status\n' | socat - UNIX-CONNECT:"$SOCK"
     sleep 5
 
     echo -e "\n\nResuming VM..."
-    echo -e  "cont" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"     
+    echo -e  "cont" | socat - UNIX-CONNECT:"$SOCK"
     sleep 5
 
     echo -e "\n\nStatus of VM..."
-    printf 'info status\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    printf 'info status\n' | socat - UNIX-CONNECT:"$SOCK"
     sleep 5
 
     echo -e "\n\nReset VM..."
-    echo -e  "system_reset" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    echo -e  "system_reset" | socat - UNIX-CONNECT:"$SOCK"
     sleep 60
 
     echo -e "\n\nStatus of VM..."
-    printf 'info status\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    printf 'info status\n' | socat - UNIX-CONNECT:"$SOCK"
     sleep 5
 
     echo -e "\n\nShutting down VM..."
-    echo -e  "system_powerdown" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"      
+    echo -e  "system_powerdown" | socat - UNIX-CONNECT:"$SOCK"
     sleep 30
 
     echo "[SUCCESS] suspend/resume/reset/shutdown test completed"
@@ -170,37 +170,38 @@ sleep 20
     Vnic_expected=24
     Vnic_origin_nbr=0
     vnic=0
-		GUEST_NAME="vm2"
+    vnic_output_before=$(mktemp)
+    vnic_output_after=$(mktemp)
     echo -e "[$(date '+%F %T')] ========= Starting 24 VNIC hotplug/unplug test for $GUEST_NAME =========\n"
 
     # Step 1: Initial VNIC status
     echo -e "[$(date '+%F %T')] [STEP 1] Checking initial VNIC status...\n"
     echo "[$(date '+%F %T')] ---- VNIC Status: info network ----"
 
-    printf 'info network\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
-    printf 'info network\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock" > output
-    Vnics_Nbr_before_hotplug=$(grep -c '^net[0-9]\+:' output)
+    printf 'info network\n' | socat - UNIX-CONNECT:"$SOCK"
+    printf 'info network\n' | socat - UNIX-CONNECT:"$SOCK" > "$vnic_output_before"
+    Vnics_Nbr_before_hotplug=$(grep -c '^net[0-9]\+:' "$vnic_output_before")
     echo -e "\n--------------"
     echo -e "\nnumber of nic of hotplugg $Vnics_Nbr_before_hotplug \n"
 
     # Step 2: Attach 24 VNICs
     for i in {1..24}; do
-        printf "netdev_add user,id=netdev$((i))\n" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
+        printf "netdev_add user,id=netdev$((i))\n" | socat - UNIX-CONNECT:"$SOCK"
     done
 
     sleep 10
 
     for i in {1..24}; do
-        printf "device_add virtio-net-pci,id=net$i,netdev=netdev$((i)),bus=pciroot$((i+4))\n" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
+        printf "device_add virtio-net-pci,id=net$i,netdev=netdev$((i)),bus=pciroot$((i+4))\n" | socat - UNIX-CONNECT:"$SOCK"
     done
 
     sleep 10
 
     # check network
     echo "[$(date '+%F %T')] ---- VNIC Status: info network ----"
-    printf 'info network\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
-    printf 'info network\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock" > output
-    Vnics_Nbr_After_hotplug=$(grep -c '^net[0-9]\+:' output)
+    printf 'info network\n' | socat - UNIX-CONNECT:"$SOCK"
+    printf 'info network\n' | socat - UNIX-CONNECT:"$SOCK" > "$vnic_output_before"
+    Vnics_Nbr_After_hotplug=$(grep -c '^net[0-9]\+:' "$vnic_output_before")
     echo -e "\n--------------"
     echo -e "\nnumber of nic $Vnics_Nbr_After_hotplug \n"
 
@@ -215,11 +216,11 @@ sleep 20
 
     # Step 3: Detach the VNICs
     for i in {1..24}; do
-        printf "netdev_del netdev$((i))\n" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
+        printf "netdev_del netdev$((i))\n" | socat - UNIX-CONNECT:"$SOCK"
     done
     
     for i in {1..24}; do
-        printf "device_del net$((i))\n" | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
+        printf "device_del net$((i))\n" | socat - UNIX-CONNECT:"$SOCK"
     done
 
     sleep 5
@@ -228,10 +229,10 @@ sleep 20
     echo "[$(date '+%F %T')] ---- VNIC Status: info network ----"
 
     sleep 20
-    printf 'info network\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock"
-    printf 'info network\n' | socat - UNIX-CONNECT:"/uc/instances/${GUEST_NAME}/write-qemu/vm0.mon.sock" > output2
+    printf 'info network\n' | socat - UNIX-CONNECT:"$SOCK"
+    printf 'info network\n' | socat - UNIX-CONNECT:"$SOCK" > "$vnic_output_after"
 
-    Vnics_Nbr_After_Unplug=$(grep -c '^net[0-9]\+:' output2)
+    Vnics_Nbr_After_Unplug=$(grep -c '^net[0-9]\+:' "$vnic_output_after")
     echo -e "\n--------------"
     echo -e "\nnumber of nic $Vnics_Nbr_After_Unplug \n"
     echo -e "\nVnics_Nbr_before_hotplug $Vnics_Nbr_before_hotplug \n"
@@ -240,8 +241,11 @@ sleep 20
         echo " ------------------------ Unplug done successfuly ------------------------"
     else
         echo " ------------------------ Unplug of vnics failed ------------------------"
+        rm -f "$vnic_output_before" "$vnic_output_after"
         exit 1
     fi
+
+    rm -f "$vnic_output_before" "$vnic_output_after"
 } | tee -a "$VNIC_LOG"
 
 
@@ -274,7 +278,6 @@ wait_for_disk_count() {
 {
 
 log "=== Starting Disk Hotplug Test ==="
-GUEST_NAME="vm2"
 
 # Step 1: Check initial state
 initial_count=$(get_disk_count)
@@ -427,4 +430,3 @@ fi
 log "=== virtio blk VDISK Test Completed Successfully ==="
 
 } | tee -a "$VIRTIO_BLK_LOG"
-
